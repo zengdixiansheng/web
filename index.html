@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <title>我的收藏夹</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-rgb: 255,255,255;
+      --text: #2f3440;
+      --muted: #6b7280;
+      --border: #e6e8ee;
+      --accent: #5b8def;
+      --accent-600: #3f73e8;
+      --shadow: 0 2px 6px rgba(0,0,0,.08);
+      --shadow-lg: 0 10px 24px rgba(0,0,0,.12);
+      --radius: 12px;
+      /* 留白比例(%)：修改此变量即可控制左右百分比留白，比如 5% / 8% / 10% */
+      --side-gutter: 6%;
+      /* 导航按钮间距（同时用于左侧内边距，保持首页按钮与间距一致） */
+      --nav-gap: 8px;
+    }
+    /* 让所有元素采用 border-box，避免百分比 padding 造成横向溢出 */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; background: var(--bg); color: var(--text);}    
+    /* 页面左右留白使用百分比（--side-gutter），内容始终居中 */
+    /* 在此调整百分比留白变量：:root --side-gutter */
+    .page {width: 100%; max-width: none; margin: 0 auto; padding: 0 var(--side-gutter); box-sizing: border-box;}    
+    h1 {text-align:left; font-size:18px; margin-bottom:24px; color: var(--text);}    
+    section {margin-bottom: 40px;}
+          h2 {border-left: 4px solid var(--accent); padding-left: 8px; color: var(--accent);}
+      .type-title {cursor:pointer;}
+    ul {list-style:none; padding:0;}
+    li {background:#fff; margin:8px 0; padding:12px 16px; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,.1);}  
+    a {text-decoration:none; color:#333; font-weight:bold;}
+    p {margin:4px 0 0; color:#666; font-size:14px;}
+    /* 网格卡片样式 */
+    .grid {display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin:16px 0;}
+    .card {position:relative; display:block; height:160px; border-radius: var(--radius); overflow:hidden; background-size:cover; background-position:center; box-shadow: var(--shadow); transition:box-shadow .2s; color:#fff; text-decoration:none;}
+    /* 1) 悬停时卡片不移动，仅微调阴影（如不需要可删除下一行） */
+    .card:hover {transform:none; box-shadow:0 4px 12px rgba(0,0,0,.18);} 
+    /* 2) 去除整卡半透遮罩，改为底部渐变信息栏 */
+    /* 2) 底部渐变信息栏：上缓下急（多段色标模拟非线性过渡） */
+    .info {position:absolute; left:0; right:0; bottom:0; padding:10px; background:linear-gradient(to top,
+      rgba(0,0,0,.75) 0%,
+      rgba(0,0,0,.60) 35%,
+      rgba(0,0,0,.30) 70%,
+      rgba(0,0,0,0) 100%
+    ); transition: top .25s ease, padding .25s ease;}
+    /* 悬停时，信息栏扩展到整张卡片 */
+    .card:hover .info {top:0;}
+    /* 叠加一个可动画的半透明背景层 */
+    .info::before {content:""; position:absolute; inset:0; background:rgba(0,0,0,.6); opacity:0; transition:opacity .25s ease;}
+    .card:hover .info::before {opacity:1;}
+    /* 文本置于半透明层之上 */
+    .info > * {position:relative; z-index:1;}
+    /* 5) 标注: 可在此调整标题颜色与行距 */
+    .info .title {margin:0; font-size:16px; line-height:1.2; color:#ffffff;}
+    /* 4) summary 显示两行，并可在此调整颜色与行距 */
+    .info .summary {margin:4px 0 0; font-size:12px; line-height:1.4; color:rgba(255,255,255,.9); font-family: Arial, Helvetica, sans-serif;
+      /* 让内容先自然换行到第二行，超出第二行再省略 */
+      white-space: normal; word-break: break-word; overflow: hidden;
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+    }
+    /* hover 时显示更详细描述，隐藏 summary */
+    .info .desc {display:none; margin:6px 0 0; font-size:12px; line-height:1.5; color:rgba(255,255,255,.95); font-family: Arial, Helvetica, sans-serif;} /* 可调颜色与行距 */
+    .card:hover .info .desc {display:block;}
+    .card:hover .info .summary {display:none;}
+    /* 顶部类型导航与折叠样式 */
+    .topbar {position:sticky; top:0; z-index:10; background: rgba(var(--surface-rgb), .9); padding:8px 0; margin:0 0 12px; box-shadow:0 1px 4px rgba(0,0,0,.06); backdrop-filter: saturate(140%) blur(8px);} 
+    .topbar .types {display:flex; gap: var(--nav-gap); flex-wrap:wrap; justify-content:flex-start; padding-left: var(--nav-gap);} /* 左距=间距 */
+    .type-btn {border:1px solid var(--border); background: var(--surface); color: var(--text); padding:6px 12px; border-radius:999px; cursor:pointer; font-size:13px; transition:background .2s, color .2s, border-color .2s, box-shadow .2s;}
+    .type-btn:hover {background:#f3f6ff; border-color:#d5def8;}
+    .type-btn.active {background: var(--accent); border-color: var(--accent); color:#fff; box-shadow: 0 4px 12px rgba(91,141,239,.3);}    
+    .section.collapsed .grid {display:none;}
+    .hidden {display:none !important;}
+
+    /* 标题行与隐蔽按钮样式 */
+    .title-row {display:flex; align-items:center; gap:8px; padding-top: 10px;}
+    .title-row h1 {flex:1 1 auto;}
+    .action-right {flex:0 0 auto; display:flex; align-items:center; gap:6px;}
+    .search-input {height:30px; padding:0 10px; border:1px solid var(--border); border-radius:16px; font-size:12px; width:160px; background: var(--surface); color: var(--text); transition:border-color .2s, box-shadow .2s;}
+    .search-input:focus {outline:none; border-color:#c7d2fe; box-shadow:0 0 0 3px rgba(91,141,239,.18);}    
+    .type-btn.ghost {background:transparent; border-color:var(--border); color:var(--muted); padding:6px 10px; font-size:12px; border-radius:999px;}
+    .type-btn.ghost:hover {background:#f6f8ff; color:#55617c;}
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="title-row">
+      <h1>我的网站收藏</h1>
+      <div class="action-right">
+        <input id="optional-key" class="search-input" placeholder="输入" />
+        <button id="optional-search" class="type-btn ghost" title="搜索">搜索</button>
+      </div>
+    </div>
+    <nav id="topbar" class="topbar"></nav>
+    <!-- 内容容器 -->
+    <div id="content"></div>
+  </div>
+
+  <!-- 引入类型映射 -->
+  <script src="js/type.js"></script>
+
+  <script>
+    /*
+      假设每个数据文件中定义了如下格式的数组：
+      const links = [ { title, url, description } ]
+    */
+  </script>
+
+  <script>
+    const loadScript = src => new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = res; s.onerror = () => rej(new Error('加载失败:'+src));
+      document.head.appendChild(s);
+    });
+
+    function createCard(item){
+      const a=document.createElement('a'); a.className='card'; a.href=item.url; a.target='_blank'; a.rel='noopener noreferrer';
+      if(item.cover) a.style.backgroundImage=`url('${item.cover}')`;
+      const info=document.createElement('div'); info.className='info';
+      const titleEl=document.createElement('h3'); titleEl.className='title'; titleEl.textContent=item.title;
+      const text = item.summary || item.description || '';
+      const p=document.createElement('p'); p.className='summary'; p.textContent=text;
+      const desc=document.createElement('p'); desc.className='desc'; desc.textContent=item.description || '';
+      info.appendChild(titleEl); info.appendChild(p); info.appendChild(desc);
+      a.appendChild(info); return a;
+    }
+
+    function activateSection(sectionId){
+      document.querySelectorAll('.type-btn').forEach(b=>{
+        b.classList.toggle('active', b.dataset.target === sectionId);
+      });
+      document.querySelectorAll('.section').forEach(sec=>{
+        sec.classList.toggle('collapsed', sec.id !== sectionId);
+      });
+      const target = document.getElementById(sectionId);
+      if (target) {
+        const topbar = document.getElementById('topbar');
+        const offset = (topbar ? topbar.offsetHeight : 0) + 8; // 适当留白
+        const y = target.getBoundingClientRect().top + window.pageYOffset - offset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    }
+
+    function render(){
+      const content=document.getElementById('content');
+      const topbar=document.getElementById('topbar');
+      const input = document.getElementById('optional-key');
+      const searchBtn = document.getElementById('optional-search');
+
+      // 顶部按钮
+      const btnWrap=document.createElement('div'); btnWrap.className='types';
+      btnWrap.setAttribute('role','tablist');
+
+      // 回到顶部按钮
+      const homeBtn=document.createElement('button');
+      homeBtn.className='type-btn';
+      homeBtn.textContent='首页';
+      homeBtn.addEventListener('click',()=>{
+        // 清除激活
+        document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('active'));
+        // 折叠所有类型
+        document.querySelectorAll('.section').forEach(sec=>sec.classList.add('collapsed'));
+        // 平滑滚动到标题位置（考虑顶部导航高度偏移）
+        const topbar = document.getElementById('topbar');
+        const header = document.querySelector('.title-row') || document.querySelector('h1');
+        const offset = (topbar ? topbar.offsetHeight : 0) + 8;
+        const y = (header ? header.getBoundingClientRect().top + window.pageYOffset : 0) - offset;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      });
+      btnWrap.appendChild(homeBtn);
+
+      types.forEach((t, idx)=>{
+        const store=window.linkStore||{}; const data=store[t.id];
+        if(!Array.isArray(data) || !data.length) return;
+
+        // section
+        const section=document.createElement('section');
+        section.className='section';
+        section.id = `section-${t.id}`;
+        section.dataset.optional = t.optional ? '1' : '0';
+        section.innerHTML=`<h2 class=\"type-title\" data-target=\"section-${t.id}\">${t.name}</h2>`;
+        const grid=document.createElement('div'); grid.className='grid';
+        data.forEach(item=>grid.appendChild(createCard(item)));
+        section.appendChild(grid);
+        content.appendChild(section);
+
+        // nav button
+        const btn=document.createElement('button');
+        btn.className='type-btn';
+        btn.textContent=t.name;
+        btn.dataset.target = section.id;
+        btn.dataset.optional = t.optional ? '1' : '0';
+        btn.setAttribute('role','tab');
+        btn.addEventListener('click',()=>{
+          activateSection(section.id);
+        });
+        btnWrap.appendChild(btn);
+      });
+
+      topbar.appendChild(btnWrap);
+
+      // 切换可选类型显示/隐藏
+      let optionalShown = false;
+      const syncOptionalVisibility = () => {
+        document.querySelectorAll('[data-optional=\'1\']').forEach(el=>{
+          el.classList.toggle('hidden', !optionalShown);
+        });
+      };
+      function handleSearch(){
+        const v = (input.value || '').trim();
+        if (v === '72875') { optionalShown = true; syncOptionalVisibility(); }
+        else if (v === '0') { optionalShown = false; syncOptionalVisibility(); }
+      }
+      searchBtn.addEventListener('click', handleSearch);
+      input.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') handleSearch(); });
+      // 初始化一次
+      syncOptionalVisibility();
+
+      // 内容标题点击同样可折叠/展开并定位
+      content.addEventListener('click', (e)=>{
+        const h = e.target.closest('.type-title');
+        if (!h) return;
+        const targetId = h.dataset.target;
+        if (targetId) activateSection(targetId);
+      });
+
+      // 默认不滚动到任何类型，保持在顶部
+      document.querySelectorAll('.section').forEach(sec=>sec.classList.add('collapsed'));
+    }
+
+    Promise.all(types.map(t=>loadScript(t.file))).then(render).catch(console.error);
+  </script>
+</body>
+</html>
