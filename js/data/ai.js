@@ -16,5 +16,5 @@
     }
   ];
   window.linkStore = window.linkStore || {};
-  window.linkStore['test1'] = links;
+  window.linkStore['ai'] = links;
 })();
