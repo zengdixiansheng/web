@@ -3,8 +3,8 @@
     {
       title: "TTS",
       url: "http://new.text-to-speech.cn/tts/",
-      description: "5ang 5ang.www",
-      summary: "1375*****2@qq.com",
+      description: "文字转音频",
+      summary: "5ang 5ang.www 1375*****2@qq.com",
       cover: "res/cover/cover.webp"
     },
     {
